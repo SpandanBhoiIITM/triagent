@@ -29,71 +29,64 @@ python seed_data.py
 python -m uvicorn app.main:app --reload
 python -m rq.cli worker analysis --worker-class rq.worker.SimpleWorker
 ```
+Open http://localhost:8001 — the web UI is served by FastAPI itself (same origin, no CORS needed). API docs: http://localhost:8001/docs
 
-Open http://localhost:8000 — the web UI is served by FastAPI itself
-(same origin, so no CORS configuration is needed).
-API docs: http://localhost:8000/docs
-Note: `--worker-class rq.worker.SimpleWorker` is needed on Windows
-(no os.fork). On Linux/Docker, plain `rq worker analysis` works.
-```
+Windows notes (skip on Mac/Linux):
 
-Optional: `export ANTHROPIC_API_KEY=...` makes the Analyst agent write reports with Claude instead of the template. The system works fully without it.
+--worker-class rq.worker.SimpleWorker is required — RQ's default worker uses os.fork(), which doesn't exist on Windows.
+Don't use --reload on uvicorn — its subprocess reloader can break local import shims (see xxhash.py below). Restart uvicorn manually after code changes instead.
+If a package's compiled dependency gets blocked by a Windows security/antivirus policy (ImportError: DLL load failed ... Application Control policy has blocked this file), see xxhash.py in the project root — it's a pure-Python stand-in that avoids this exact issue for one of LangGraph's dependencies. Same technique works for other blocked native dependencies: write a small pure-Python module with the same name, place it in the project root, Python finds it before the installed (blocked) package.
 
-## Important: use a real dataset
+Optional: export ANTHROPIC_API_KEY=... (or set on Windows) makes the Analyst agent write reports with Claude instead of the template. The system works fully without it.
 
-`data/sample_tickets.csv` has only 25 rows — enough to run the system, far too small for a meaningful model (you'll see ~20% accuracy). Before putting this on your resume, retrain on a real dataset, e.g. Kaggle's "Customer Support Ticket Dataset" (10k+ rows), and record the classification report numbers. Then fine-tune DistilBERT on the same data and record the improvement — that comparison is your headline metric.
+Important: use a real dataset
 
-## Features beyond the core pipeline
+data/sample_tickets.csv has only 25 rows — enough to run the system, far too small for a meaningful model (you'll see ~20% accuracy). Before putting this on your resume, retrain on a real dataset, e.g. Kaggle's "Customer Support Ticket Dataset" (10k+ rows), and record the classification report numbers. Then fine-tune DistilBERT on the same data and record the improvement — that comparison is your headline metric.
 
-**Human-in-the-loop review.** ML routes risky tickets to a human instead of full automation: negative-sentiment tickets always require review, and neutral billing tickets do too (money issues are risky even when the customer sounds calm). They wait in the Review queue tab until a human marks them resolved. Interview point: this is how ML systems are actually deployed — automate the easy 80%, keep humans on the high-risk slice.
+Features beyond the core pipeline
 
-**Data retention policy.** Resolved tickets are deleted 7 days after resolution (`cleanup_resolved`), so the database doesn't grow forever. Runs at API startup and piggybacked after each analysis job; in production it would run on a scheduler (cron / rq-scheduler).
+Human-in-the-loop review. ML routes risky tickets to a human instead of full automation: negative-sentiment tickets always require review, and neutral billing tickets do too (money issues are risky even when the customer sounds calm). They wait in the Review queue tab until a human marks them resolved. Interview point: this is how ML systems are actually deployed — automate the easy 80%, keep humans on the high-risk slice.
 
-**Cache invalidation on writes.** Creating or resolving a ticket deletes the cached ticket lists (`invalidate_ticket_cache`), so reads after a write are never stale. Interview point: cache-aside for reads + invalidate-on-write is the standard answer to "how do you keep the cache consistent?"
+Data retention policy. Resolved tickets are deleted 7 days after resolution (cleanup_resolved), so the database doesn't grow forever. Runs at API startup and piggybacked after each analysis job; in production it would run on a scheduler (cron / rq-scheduler).
 
-**Search.** `/search?q=` does SQL LIKE over subject and body. Upgrade path: full-text index (MySQL FULLTEXT) or embedding-based semantic search.
+Cache invalidation on writes. Creating or resolving a ticket deletes the cached ticket lists (invalidate_ticket_cache), so reads after a write are never stale. Interview point: cache-aside for reads + invalidate-on-write is the standard answer to "how do you keep the cache consistent?"
 
-## Interview talking points (know these cold)
+Search. /search?q= does SQL LIKE over subject and body. Upgrade path: full-text index (MySQL FULLTEXT) or embedding-based semantic search.
 
-**System design**
-- Why a job queue? Agent analysis takes 10–60s; running it in the request would block a server worker and time out. The API stays fast, workers scale horizontally (`rq worker` × N).
-- Why Redis for three things? Cache (cache-aside with TTL — check `source` field in `/tickets` response to see hits), rate limiting (fixed-window INCR+EXPIRE; know its weakness: bursts at window edges; sliding window fixes it), and queue broker for RQ.
-- Failure handling: worker wraps jobs in try/except, status goes to `failed` instead of hanging forever. Jobs are idempotent — safe to retry.
-- Scaling answer: API is stateless → add replicas behind a load balancer; add workers for queue depth; MySQL read replicas if reads dominate.
+Interview talking points (know these cold)
 
-**Database**
-- Schema: tickets / analysis_jobs / reports with a foreign key. Indexes on `category` and `status` — run `EXPLAIN SELECT * FROM tickets WHERE category='billing'` and show it uses `idx_category`.
-- Why raw SQL over ORM: you can explain every query and its index usage.
+System design
 
-**ML**
-- TF-IDF + LogisticRegression baseline: fast, interpretable, a benchmark to beat.
-- Upgrade story: DistilBERT fine-tune → better F1, higher latency and cost. Trade-off talk beats library name-dropping.
-- KMeans clustering finds recurring themes; top cluster-center terms name the theme.
-- Semantic search: TF-IDF cosine similarity now; upgrade to sentence-transformer embeddings + FAISS because TF-IDF misses synonyms ("refund" vs "money back").
+Why a job queue? Agent analysis takes 10–60s; running it in the request would block a server worker and time out. The API stays fast, workers scale horizontally (rq worker × N).
+Why Redis for three things? Cache (cache-aside with TTL — check source field in /tickets response to see hits), rate limiting (fixed-window INCR+EXPIRE; know its weakness: bursts at window edges; sliding window fixes it), and queue broker for RQ.
+Failure handling: worker wraps jobs in try/except, status goes to failed instead of hanging forever. Jobs are idempotent — safe to retry.
+Scaling answer: API is stateless → add replicas behind a load balancer; add workers for queue depth; MySQL read replicas if reads dominate.
 
-**LangGraph**
-- Why a graph, not a chain: the Critic node has a conditional edge — approve → END, reject → back to Analyst (a loop). Chains can't loop.
-- Critic does a grounding check: report must reference real ticket IDs, which limits hallucination.
-- Graceful degradation: works with or without an LLM API key.
+Database
 
-**FastAPI (sync)**
-- Plain `def` endpoints run in FastAPI's threadpool — they do not block the event loop. You get validation, auto docs, and speed with zero async code. Knowing *why* this is safe is itself an interview point.
+Schema: tickets / analysis_jobs / reports with a foreign key. Indexes on category and status — run EXPLAIN SELECT * FROM tickets WHERE category='billing' and show it uses idx_category.
+Why raw SQL over ORM: you can explain every query and its index usage.
 
-## Roadmap (say these when asked "what would you improve?")
-- Fine-tuned DistilBERT classifier + HuggingFace sentiment model
-- Sentence-transformer embeddings with FAISS index for retrieval
-- Connection pooling for MySQL
-- Sliding-window rate limiter
-- Dockerize the API and worker too (full docker-compose deployment)
-- Auth with API keys stored in MySQL
+ML
 
-## Adding your own screenshots
+TF-IDF + LogisticRegression baseline: fast, interpretable, a benchmark to beat.
+Upgrade story: DistilBERT fine-tune → better F1, higher latency and cost. Trade-off talk beats library name-dropping.
+KMeans clustering finds recurring themes; top cluster-center terms name the theme.
+Semantic search: TF-IDF cosine similarity now; upgrade to sentence-transformer embeddings + FAISS because TF-IDF misses synonyms ("refund" vs "money back").
 
-1. Run the app, take screenshots of: (a) the Submit ticket tab showing a classified ticket, (b) the Agent analysis tab mid-pipeline with the stepper lit up.
-2. Save them as `docs/screenshot-submit.png` and `docs/screenshot-analysis.png` (same names replace the placeholders in this README automatically).
-3. Commit and push:
-```bash
-git add docs/
-git commit -m "Add UI screenshots"
-git push
-```
+LangGraph
+
+Why a graph, not a chain: the Critic node has a conditional edge — approve → END, reject → back to Analyst (a loop). Chains can't loop.
+Critic does a grounding check: report must reference real ticket IDs, which limits hallucination.
+Graceful degradation: works with or without an LLM API key.
+
+FastAPI (sync)
+
+Plain def endpoints run in FastAPI's threadpool — they do not block the event loop. You get validation, auto docs, and speed with zero async code. Knowing why this is safe is itself an interview point.
+Roadmap (say these when asked "what would you improve?")
+Fine-tuned DistilBERT classifier + HuggingFace sentiment model
+Sentence-transformer embeddings with FAISS index for retrieval
+Connection pooling for MySQL
+Sliding-window rate limiter
+Dockerize the API and worker too (full docker-compose deployment)
+Auth with API keys stored in MySQL
