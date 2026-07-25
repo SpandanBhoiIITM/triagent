@@ -1,25 +1,20 @@
-# Ticket Intelligence — AI Agent System for Support Ticket Analysis
+# Triagent — AI Agent System for Support Ticket Triage
 
-Support teams waste hours manually triaging tickets. This system automatically classifies incoming tickets with ML, clusters recurring issues, and uses a LangGraph multi-agent pipeline to generate grounded analysis reports — all behind a production-style backend with caching, rate limiting, and an async job queue (built with simple synchronous Python functions).
+Support teams waste hours manually triaging tickets. Triagent automatically classifies incoming tickets with ML, routes risky ones to a human review queue, and uses a LangGraph multi-agent pipeline to generate grounded analysis reports on demand — behind a production-style backend with caching, rate limiting, and an async job queue.
 
 ## Architecture
 
-```
-Web UI (static/index.html, served by FastAPI at /) ──> FastAPI (sync endpoints)
-                   │  rate limit (Redis INCR+EXPIRE)
-                   │  cache-aside (Redis, 60s TTL)
-                   │  ML inference (TF-IDF + LogisticRegression)
-                   ├──> MySQL (tickets, jobs, reports — indexed)
-                   └──> Redis Queue (RQ)
-                            │
-                        RQ Worker (separate process)
-                            └──> LangGraph pipeline:
-                                 Retriever ─> Analyst ─> Critic
-                                                 ▲          │ reject
-                                                 └──────────┘ (max 2 retries)
-```
+<img src="docs/architecture.svg" alt="Triagent architecture: Web UI to FastAPI, Redis for cache and queue, MySQL for storage, RQ worker running a LangGraph retriever-analyst-critic pipeline with a retry loop" width="700"/>
 
-The `/analyze` endpoint returns a `job_id` in milliseconds; the heavy agent work runs in a worker process, and the client polls `/jobs/{id}`. This is the classic async-job pattern implemented with zero `async` code.
+The `/analyze` endpoint returns a `job_id` in milliseconds; the heavy agent work runs in a separate worker process, and the client polls `/jobs/{id}`. This is the classic async-job pattern, implemented almost entirely with plain synchronous Python functions.
+
+## Screenshots
+
+| Submit & classify | Agent analysis pipeline |
+|---|---|
+| ![Submit ticket](docs/screenshot-submit.png) | ![Agent analysis](docs/screenshot-analysis.png) |
+
+*(replace these with your own screenshots — see "Adding screenshots" below)*
 
 ## Setup (5 steps)
 
@@ -98,3 +93,14 @@ Optional: `export ANTHROPIC_API_KEY=...` makes the Analyst agent write reports w
 - Sliding-window rate limiter
 - Dockerize the API and worker too (full docker-compose deployment)
 - Auth with API keys stored in MySQL
+
+## Adding your own screenshots
+
+1. Run the app, take screenshots of: (a) the Submit ticket tab showing a classified ticket, (b) the Agent analysis tab mid-pipeline with the stepper lit up.
+2. Save them as `docs/screenshot-submit.png` and `docs/screenshot-analysis.png` (same names replace the placeholders in this README automatically).
+3. Commit and push:
+```bash
+git add docs/
+git commit -m "Add UI screenshots"
+git push
+```
