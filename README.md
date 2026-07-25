@@ -41,7 +41,7 @@ Optional: export ANTHROPIC_API_KEY=... (or set on Windows) makes the Analyst age
 
 Important: use a real dataset
 
-data/sample_tickets.csv has only 25 rows — enough to run the system, far too small for a meaningful model (you'll see ~20% accuracy). Before putting this on your resume, retrain on a real dataset, e.g. Kaggle's "Customer Support Ticket Dataset" (10k+ rows), and record the classification report numbers. Then fine-tune DistilBERT on the same data and record the improvement — that comparison is your headline metric.
+data/sample_tickets.csv has only 25 rows — enough to run the system, far too small for a meaningful model 
 
 Features beyond the core pipeline
 
