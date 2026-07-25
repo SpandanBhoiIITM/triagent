@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+redis
+rq
+pymysql
+scikit-learn
+pandas
+joblib
+langgraph
+streamlit
+requests
+cryptography

@@ -1,0 +1,26 @@
+ticket_id,subject,body,category
+1,Cannot login to my account,I keep getting invalid password error even after resetting my password twice,account
+2,App crashes on startup,The mobile app crashes immediately when I open it on Android 14,bug
+3,Refund not received,I cancelled my order 10 days ago but the refund has not appeared in my bank,billing
+4,How to export my data,I want to download all my data as CSV but cannot find the option,howto
+5,Payment failed but money deducted,My card was charged but the order shows payment failed,billing
+6,Two factor authentication not working,The OTP SMS never arrives when I try to enable 2FA,account
+7,Feature request dark mode,Please add dark mode to the dashboard it hurts my eyes at night,feature
+8,Website very slow today,Pages are taking more than 30 seconds to load since this morning,bug
+9,Duplicate charge on invoice,I was billed twice for the same subscription this month,billing
+10,Reset password link expired,The password reset email link says expired even when I click it immediately,account
+11,Cannot upload files larger than 10MB,Getting error 413 when uploading files bigger than 10 megabytes,bug
+12,How do I change my email address,I want to update the email on my profile but the field is greyed out,howto
+13,Subscription renewed without notice,My plan auto renewed and I was not notified beforehand I want to cancel,billing
+14,Add integration with Slack,It would be great if notifications could be sent to our Slack channel,feature
+15,Search returns no results,Search bar returns nothing even for items I know exist,bug
+16,Locked out after too many attempts,My account is locked after failed logins how long until it unlocks,account
+17,Invoice PDF download broken,Clicking download invoice gives a 500 server error,bug
+18,How to add team members,I need steps to invite my colleagues to the workspace,howto
+19,Charged in wrong currency,I was billed in USD but my account is set to INR,billing
+20,Export to Excel feature,Please allow exporting reports directly to Excel format,feature
+21,Session logs out every 5 minutes,I am forced to login repeatedly the session does not persist,account
+22,Images not loading in reports,All charts and images show broken icons in the weekly report,bug
+23,Cancel subscription steps,What is the process to cancel my premium subscription,howto
+24,API rate limit too low,The current API limit of 100 requests per hour is too restrictive for our use,feature
+25,Promo code not applying,The discount code SAVE20 shows invalid at checkout but it should be active,billing
