@@ -8,13 +8,6 @@ Support teams waste hours manually triaging tickets. Triagent automatically clas
 
 The `/analyze` endpoint returns a `job_id` in milliseconds; the heavy agent work runs in a separate worker process, and the client polls `/jobs/{id}`. This is the classic async-job pattern, implemented almost entirely with plain synchronous Python functions.
 
-## Screenshots
-
-| Submit & classify | Agent analysis pipeline |
-|---|---|
-| ![Submit ticket](docs/screenshot-submit.png) | ![Agent analysis](docs/screenshot-analysis.png) |
-
-*(replace these with your own screenshots — see "Adding screenshots" below)*
 
 ## Setup (5 steps)
 
