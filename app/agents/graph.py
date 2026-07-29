@@ -4,15 +4,7 @@ LangGraph pipeline: Retriever -> Analyst -> Critic -> Report.
 Every node is a PLAIN PYTHON FUNCTION that takes the state dict and
 returns updated fields. No async anywhere. LangGraph fully supports this.
 
-Interview points:
-- Why LangGraph over a plain LangChain chain? State management +
-  conditional edges. Here the Critic can REJECT a report and send it
-  back to the Analyst (a loop) -- that's a real graph, not a chain.
-- The Critic checks every claim mentions a real ticket id, reducing
-  hallucination. This "grounding check" is a great thing to explain.
-- LLM is optional: if ANTHROPIC_API_KEY is set, the Analyst uses Claude
-  to write the summary. Otherwise a template writes it. The system works
-  end to end either way -- good engineering (graceful degradation).
+
 """
 
 import os
