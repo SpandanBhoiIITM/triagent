@@ -1,16 +1,7 @@
 """
 Email notifications via SMTP. One function, ~15 lines of real logic.
 
-Interview points:
-- smtplib is Python's built-in SMTP client -- no extra library needed.
-- Uses Gmail's SMTP server as an example (smtp.gmail.com:587) with STARTTLS
-  (upgrades a plain connection to an encrypted one -- know this term).
-- Gmail requires an "App Password", not your normal password, when 2FA is
-  on. That's a real detail worth knowing if asked.
-- Fails SILENTLY (prints instead of raising) so a broken email config
-  never breaks ticket creation -- notifications are a nice-to-have, the
-  core feature must not depend on them. This "non-critical path should
-  not break the critical path" idea is a good design point to mention.
+
 """
 
 import os
