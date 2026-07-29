@@ -1,9 +1,7 @@
 """
 FastAPI app. ALL endpoints are plain `def` functions (synchronous).
 
-Interview point: FastAPI runs sync endpoints in a threadpool, so plain
-`def` functions do NOT block the server. You get FastAPI's validation,
-auto docs (/docs) and speed without writing any async code.
+
 
 Run:  uvicorn app.main:app --reload
 Docs: http://localhost:8000/docs
