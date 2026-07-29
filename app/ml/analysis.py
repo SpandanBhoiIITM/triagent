@@ -1,13 +1,7 @@
 """
 Clustering (find recurring issue themes) + semantic search (retrieval).
 
-Interview points:
-- KMeans on TF-IDF vectors groups similar tickets. Top terms per cluster
-  become the "theme name".
-- Semantic search here uses TF-IDF cosine similarity. Upgrade path:
-  sentence-transformers embeddings + a vector index (FAISS). Explaining
-  WHY you'd upgrade (TF-IDF misses synonyms, embeddings capture meaning)
-  is the interview gold, not the library name.
+
 """
 
 import numpy as np
