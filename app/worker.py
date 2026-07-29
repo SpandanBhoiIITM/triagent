@@ -6,14 +6,7 @@ Background worker job. Run the worker with:
 RQ (Redis Queue) pulls jobs from Redis and runs this plain function in a
 separate process. No async, no Celery complexity.
 
-Interview points:
-- Why a queue at all? Agent analysis takes 10-60s. Doing it inside the
-  HTTP request would time out and block a server worker. Queue = the API
-  responds in milliseconds, heavy work happens elsewhere.
-- Failure handling: everything is wrapped in try/except; job status goes
-  to 'failed' instead of being lost. Mention idempotency: re-running the
-  same job_id just overwrites the report -- safe to retry.
-- Scaling: run more `rq worker` processes to process jobs in parallel.
+
 """
 
 from app import db
