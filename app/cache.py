@@ -1,12 +1,7 @@
 """
 Redis helpers: caching + rate limiting. Plain functions, sync redis client.
 
-Interview points:
-- Cache-aside pattern: check cache first, on miss compute + store with TTL.
-- Rate limiting with a fixed window counter: INCR + EXPIRE. Simple to
-  explain. Mention: "a sliding window or token bucket is more accurate,
-  fixed window can allow bursts at window boundaries" -- knowing the
-  limitation is what impresses interviewers.
+
 """
 
 import os
