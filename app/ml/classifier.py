@@ -1,14 +1,7 @@
 """
 Ticket category classifier: TF-IDF + Logistic Regression.
 
-Interview points:
-- Why TF-IDF + LogReg as baseline? Fast, interpretable, trains in seconds,
-  and gives a benchmark to compare a transformer against.
-- Upgrade path: fine-tune DistilBERT and compare F1 scores. Being able to
-  say "baseline F1 was X, transformer improved it to Y at Z ms latency
-  cost" is a strong interview answer.
-- Sentiment here is a simple keyword approach; upgrade to a pretrained
-  transformer sentiment model later (see comments at bottom).
+
 """
 
 import os
