@@ -53,40 +53,4 @@ Cache invalidation on writes. Creating or resolving a ticket deletes the cached 
 
 Search. /search?q= does SQL LIKE over subject and body. Upgrade path: full-text index (MySQL FULLTEXT) or embedding-based semantic search.
 
-Interview talking points (know these cold)
 
-System design
-
-Why a job queue? Agent analysis takes 10–60s; running it in the request would block a server worker and time out. The API stays fast, workers scale horizontally (rq worker × N).
-Why Redis for three things? Cache (cache-aside with TTL — check source field in /tickets response to see hits), rate limiting (fixed-window INCR+EXPIRE; know its weakness: bursts at window edges; sliding window fixes it), and queue broker for RQ.
-Failure handling: worker wraps jobs in try/except, status goes to failed instead of hanging forever. Jobs are idempotent — safe to retry.
-Scaling answer: API is stateless → add replicas behind a load balancer; add workers for queue depth; MySQL read replicas if reads dominate.
-
-Database
-
-Schema: tickets / analysis_jobs / reports with a foreign key. Indexes on category and status — run EXPLAIN SELECT * FROM tickets WHERE category='billing' and show it uses idx_category.
-Why raw SQL over ORM: you can explain every query and its index usage.
-
-ML
-
-TF-IDF + LogisticRegression baseline: fast, interpretable, a benchmark to beat.
-Upgrade story: DistilBERT fine-tune → better F1, higher latency and cost. Trade-off talk beats library name-dropping.
-KMeans clustering finds recurring themes; top cluster-center terms name the theme.
-Semantic search: TF-IDF cosine similarity now; upgrade to sentence-transformer embeddings + FAISS because TF-IDF misses synonyms ("refund" vs "money back").
-
-LangGraph
-
-Why a graph, not a chain: the Critic node has a conditional edge — approve → END, reject → back to Analyst (a loop). Chains can't loop.
-Critic does a grounding check: report must reference real ticket IDs, which limits hallucination.
-Graceful degradation: works with or without an LLM API key.
-
-FastAPI (sync)
-
-Plain def endpoints run in FastAPI's threadpool — they do not block the event loop. You get validation, auto docs, and speed with zero async code. Knowing why this is safe is itself an interview point.
-Roadmap (say these when asked "what would you improve?")
-Fine-tuned DistilBERT classifier + HuggingFace sentiment model
-Sentence-transformer embeddings with FAISS index for retrieval
-Connection pooling for MySQL
-Sliding-window rate limiter
-Dockerize the API and worker too (full docker-compose deployment)
-Auth with API keys stored in MySQL
