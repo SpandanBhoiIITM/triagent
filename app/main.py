@@ -25,18 +25,7 @@ app = FastAPI(title="Ticket Intelligence API")
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    """
-    Simple middleware: runs BEFORE and AFTER every request.
-    Interview point: middleware wraps every endpoint without editing each
-    one -- here it times the request and logs method, path, status, and
-    duration. Same pattern is used for auth checks, CORS, error handling.
-
-    Note: FastAPI middleware must be declared `async def` -- this is the
-    ONE place FastAPI requires async, because middleware sits directly in
-    the ASGI request chain. Every endpoint below stays a plain sync `def`.
-    `await call_next(request)` just hands off to the next step in the
-    chain (eventually your sync endpoint, run safely in a threadpool).
-    """
+    
     start = time.time()
     response = await call_next(request)    # runs the actual endpoint
     duration_ms = round((time.time() - start) * 1000, 1)
